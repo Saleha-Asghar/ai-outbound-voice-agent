@@ -1,4 +1,11 @@
 {
+  "_setup_instructions": {
+  "step1": "Replace GOOGLE-SHEET-URL with your Google Sheet URL",
+  "step2": "Replace YOUR-ID with any random UUID",
+  "step3": "Replace AUTH-ID with your n8n Google Sheets credential ID",
+  "step4": "Import into n8n via: Workflows > Import from File",
+  "step5": "Set up Cloudflare tunnel and paste URL into VAPI Server URL"
+}
   "name": "Alex - Call Logger",
   "nodes": [
     {
@@ -55,7 +62,7 @@
         "operation": "append",
         "documentId": {
           "__rl": true,
-          "value": "https://docs.google.com/spreadsheets/d/1R6Kdoyb571CJBCmk19bpwnWleH1ZrITpu9dHrwCL5d4/edit?gid=0#gid=0",
+          "value": "GOOGLE-SHEET-URL",
           "mode": "url"
         },
         "sheetName": {
@@ -84,10 +91,10 @@
         32,
         -48
       ],
-      "id": "ce276eac-d959-40ca-84a3-381ac97ad407",
+      "id": "YOUR-ID",
       "credentials": {
         "googleSheetsOAuth2Api": {
-          "id": "n2bftoGUZmLFmqxj",
+          "id": "AUTH-ID",
           "name": "Google Sheets account"
         }
       }
