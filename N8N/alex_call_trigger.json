@@ -1,1 +1,69 @@
-
+{
+  "name": "Outbound AI Voice Agent",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "YOUR-ID",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.vapi.ai/call",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"assistantId\": \"YOUR-ASSISTANT-ID\",\n  \"phoneNumberId\": \"YOUR-PHONE-ID\",\n  \"customer\": {\n    \"number\": \"YOUR-NUMBER\",\n    \"name\": \"Saleha\"\n  },\n  \"assistantOverrides\": {\n    \"variableValues\": {\n      \"customer_name\": \"Saleha\"\n    }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "YOUR-ID",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "RANDOM",
+          "name": "Bearer Auth account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "6cb32132-8ea0-4f48-bcad-7bf01145e0a3",
+  "meta": {
+    "instanceId": "4769e9b0007a7c5863212d08753ad00c2a6ce2744c78ba0bd08e2b80aac0ae53"
+  },
+  "nodeGroups": [],
+  "id": "84TqWWHykiCG5aL8",
+  "tags": []
+}
