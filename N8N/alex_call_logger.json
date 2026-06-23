@@ -1,1 +1,179 @@
-
+{
+  "name": "Alex - Call Logger",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "vapi-callback",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "VAPI Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -624,
+        32
+      ],
+      "id": "06834af7-566f-483e-8c5c-9abf31b2b992",
+      "webhookId": "3c185ed0-c7f8-4ef3-9fb0-6dbbd177c21d"
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $input.first().json.body || $input.first().json;\n\n// VAPI sends different event types - we only want 'end-of-call-report'\nconst eventType = body.message?.type || body.type || '';\n\nif (eventType !== 'end-of-call-report') {\n  return [{ json: { skip: true, eventType } }];\n}\n\nconst message = body.message || body;\n\n// Extract core call data\nconst callData = message.call || {};\nconst artifact = message.artifact || {};\nconst analysis = message.analysis || {};\n\n// Extract transcript\nconst transcript = artifact.transcript || 'No transcript available';\n\n// Extract duration\nconst startTime = callData.startedAt || callData.createdAt || '';\nconst endTime = callData.endedAt || '';\nlet duration = 'N/A';\nif (startTime && endTime) {\n  const secs = Math.round((new Date(endTime) - new Date(startTime)) / 1000);\n  duration = `${Math.floor(secs/60)}m ${secs%60}s`;\n}\n\n// Extract ended reason\nconst endedReason = callData.endedReason || message.endedReason || 'Unknown';\n\n// Extract customer name\nconst customerName = callData.customer?.name || 'Unknown';\n\n// Extract recording URL\nconst recordingUrl = artifact.recordingUrl || 'Not available';\n\n// Determine qualification status from transcript\nconst transcriptLower = transcript.toLowerCase();\nlet qualificationStatus = 'Not Qualified';\nlet callbackBooked = 'No';\n\nif (transcriptLower.includes('callback') || \n    transcriptLower.includes('schedule') || \n    transcriptLower.includes('appointment') ||\n    transcriptLower.includes('tomorrow') ||\n    transcriptLower.includes('time works')) {\n  qualificationStatus = 'Qualified';\n  callbackBooked = 'Yes';\n} else if (transcriptLower.includes('budget') || \n           transcriptLower.includes('timeline') ||\n           transcriptLower.includes('looking to buy') ||\n           transcriptLower.includes('looking to sell')) {\n  qualificationStatus = 'Partial';\n}\n\nif (transcriptLower.includes('not interested') || \n    transcriptLower.includes('remove me') ||\n    transcriptLower.includes('dont call')) {\n  qualificationStatus = 'Not Interested';\n  callbackBooked = 'No';\n}\n\nreturn [{\n  json: {\n    skip: false,\n    timestamp: new Date().toLocaleString('en-PK', { timeZone: 'Asia/Karachi' }),\n    customerName,\n    callDuration: duration,\n    endedReason,\n    qualificationStatus,\n    callbackBooked,\n    fullTranscript: transcript,\n    recordingUrl\n  }\n}];"
+      },
+      "name": "Extract Call Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -416,
+        32
+      ],
+      "id": "23dcb614-1487-4917-ac09-acccfac545bb"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.skip }}"
+            }
+          ]
+        }
+      },
+      "name": "Should Log?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -192,
+        32
+      ],
+      "id": "b496d338-fe70-4a2a-8eb8-f2df97d85096"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/1R6Kdoyb571CJBCmk19bpwnWleH1ZrITpu9dHrwCL5d4/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "mode": "name",
+          "value": "Sheet1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Timestamp": "={{ $json.timestamp }}",
+            "Customer Name": "={{ $json.customerName }}",
+            "Call Duration": "={{ $json.callDuration }}",
+            "Ended Reason": "={{ $json.endedReason }}",
+            "Qualification Status": "={{ $json.qualificationStatus }}",
+            "Callback Booked": "={{ $json.callbackBooked }}",
+            "Full Transcript": "={{ $json.fullTranscript }}",
+            "Recording URL": "={{ $json.recordingUrl }}"
+          }
+        },
+        "options": {}
+      },
+      "name": "Log to Google Sheets",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        32,
+        -48
+      ],
+      "id": "ce276eac-d959-40ca-84a3-381ac97ad407",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "n2bftoGUZmLFmqxj",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={ \"received\": true }",
+        "options": {}
+      },
+      "name": "Respond to VAPI",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        32,
+        160
+      ],
+      "id": "38ff2f56-8c28-4f28-92e2-4106656da035"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "VAPI Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Call Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Call Data": {
+      "main": [
+        [
+          {
+            "node": "Should Log?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Log?": {
+      "main": [
+        [
+          {
+            "node": "Log to Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond to VAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log to Google Sheets": {
+      "main": [
+        [
+          {
+            "node": "Respond to VAPI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "5eab2b51-f85a-4f3f-893a-34047ca658db",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4769e9b0007a7c5863212d08753ad00c2a6ce2744c78ba0bd08e2b80aac0ae53"
+  },
+  "nodeGroups": [],
+  "id": "BuR8dxBJDOkVHAcd",
+  "tags": []
+}
